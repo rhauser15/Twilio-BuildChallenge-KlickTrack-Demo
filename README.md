@@ -40,7 +40,11 @@ $
 $ # Access the dashboard in browser: http://127.0.0.1:5000/
 ```
 
-
+0. Twilio account required. In parent directory create a file called "api_cred.py" with preferred text editor. Input Twilio API creds: 
+```
+account_sid = "xxx"
+auth_token  = "xxx"                                                   
+```
 1. Create a new account or loging with credentials user:test/pass:test. 
 
 2. Navigate to marketing tab on left. 
