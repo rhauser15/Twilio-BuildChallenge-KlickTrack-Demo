@@ -1,7 +1,7 @@
-# FRONT END DESIGN/TEMPLATE: [Argon Dashboard Flask](https://www.creative-tim.com/product/argon-dashboard-flask) [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&logo=twitter)]
+# FRONT END DESIGN/TEMPLATE: [Argon Dashboard Flask](https://www.creative-tim.com/product/argon-dashboard-flask) [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&logo=twitter)]#
 
 
-#This project is up and running on AWS here: 
+#This project is up and running on AWS here:# 
 
 
 $ cd argon-dashboard-flask
