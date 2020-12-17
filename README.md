@@ -5,8 +5,8 @@
 
 
 <h4> Installation: </h4>
-'''
-$ cd Twilio-BuildChallenge-KlickTrack-Demo
+
+```$ cd Twilio-BuildChallenge-KlickTrack-Demo
 $
 $ # Virtualenv modules installation (Unix based systems)
 $ virtualenv env
