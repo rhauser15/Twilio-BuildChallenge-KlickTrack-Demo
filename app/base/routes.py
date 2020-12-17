@@ -3,7 +3,7 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from flask import jsonify, render_template, redirect, request, url_for
+from flask import jsonify, render_template, redirect, request, url_for, abort
 from flask_login import (
     current_user,
     login_required,
@@ -17,6 +17,16 @@ from app.base.forms import LoginForm, CreateAccountForm
 from app.base.models import User
 
 from app.base.util import verify_pass
+
+from twilio.rest import Client
+from twilio.twiml.messaging_response import MessagingResponse
+import sys
+from api_cred import *
+
+client = Client(account_sid, auth_token)
+
+number_Id = []
+messaging_service = 'test'
 
 @blueprint.route('/')
 def route_default():
@@ -101,6 +111,123 @@ def shutdown():
     func()
     return 'Server shutting down...'
 
+#1. Provision twilio sub-account
+
+@blueprint.route('/provision', methods=['POST'])
+def provision():
+    global client
+    global number_Id
+    #reset number ID
+    number_Id = []
+    client = Client(account_sid, auth_token)
+    username = request.get_json(force=True).get('username')
+    #If user name is blank, abort with 401
+    if not username:
+        abort(401)
+
+    account = client.api.accounts.create(friendly_name=username)
+    client = Client(account.sid, account.auth_token)
+    SID = {'sid': account.sid}
+
+    return jsonify(SID);
+
+#2. Purchase phone number
+
+@blueprint.route('/purchase', methods=['POST'])
+def purchase():
+     global number_Id
+     area = request.get_json(force=True).get('area')
+     print(area, file=sys.stderr)
+     local = client.available_phone_numbers('US').local.list(
+         area_code=area,
+         limit=1
+     )
+
+     #Return error if no phone numbers retured in list (area code not available)
+     print(local, file=sys.stderr)
+     if not local:
+         number = {'number': 'No numbers in this area code avilable. Please wait or try with a different area code.'}
+         return jsonify(number)
+
+     for record in local:
+        number = {'number': record.friendly_name}
+        incoming_phone_number = client.incoming_phone_numbers \
+            .create(phone_number=record.phone_number)
+        print(incoming_phone_number.sid, file=sys.stderr)
+        number_Id.append(incoming_phone_number.sid)
+     return jsonify(number)
+
+
+#3. Provision messaging service
+@blueprint.route('/provision_m', methods=['POST'])
+
+def provision_m():
+     global messaging_service
+     service_name = request.get_json(force=True).get('service_name')
+     print(service_name, file=sys.stderr)
+     service = client.messaging \
+         .services \
+         .create(
+         status_callback='http://requestb.in/1234abcd',
+         #5. programatically assign inbound request url.
+         inbound_request_url='http://54.191.230.228:5001/sms',
+         #7. disabled sticky sender
+         sticky_sender = 'false',
+         friendly_name=service_name
+     )
+     messaging_service=service.sid
+     print(messaging_service, file=sys.stderr)
+     service_name = {'service_name': service_name}
+     return jsonify(service_name)
+
+
+#4. Assign phone numbers to messaging service
+@blueprint.route('/assign', methods=['POST'])
+def assign_n():
+    global messaging_service
+
+    for record in number_Id:
+     phone_number = client.messaging \
+            .services(messaging_service) \
+            .phone_numbers \
+            .create(
+            phone_number_sid=record
+        )
+
+     print(phone_number.sid, file=sys.stderr)
+     status = 'All numbers added successfully'
+     service_name = {'status': status}
+     return jsonify(service_name)
+
+#6 Webhook. (Callback URL has been set before)
+
+@blueprint.route("/sms", methods=['GET', 'POST'])
+def sms_reply():
+    """Respond to incoming message with a simple text message."""
+    # Start our TwiML response
+    resp = MessagingResponse()
+
+    # Add a message
+    resp.message("The Robots are coming! Head for the hills!")
+
+    return str(resp)
+
+#8 Send outbound SMS
+@blueprint.route("/send", methods=['GET', 'POST'])
+def send():
+    global messaging_service
+    send = request.get_json(force=True).get('send')
+    print(send, file=sys.stderr)
+    message = client.messages \
+    .create(
+         body='Revenge of the Sith was clearly the best of the prequel trilogy.',
+         messaging_service_sid=messaging_service,
+         to=send
+     )
+
+    status = 'Message sent successfully'
+    service_name = {'status': status}
+    return jsonify(service_name)
 ## Errors
 
 @login_manager.unauthorized_handler

@@ -9,6 +9,7 @@ from flask_login import login_required, current_user
 from app import login_manager
 from jinja2 import TemplateNotFound
 
+
 @blueprint.route('/index')
 @login_required
 def index():
@@ -50,3 +51,4 @@ def get_segment( request ):
 
     except:
         return None  
+
