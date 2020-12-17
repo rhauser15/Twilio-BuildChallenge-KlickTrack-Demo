@@ -2,6 +2,8 @@
 
 
 <h3> Installation: </h3>
+
+
 ```bash
 $ # Get the code
 $ git clone https://github.com/app-generator/flask-boilerplate-dashboard-argon.git
